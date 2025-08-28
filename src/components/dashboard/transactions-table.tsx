@@ -23,62 +23,15 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-// Sample transaction data - replace with real data from props
-const sampleTransactions = [
-  {
-    id: 1,
-    quando: new Date("2024-01-15"),
-    valor: -150.50,
-    detalhes: "Compras no supermercado",
-    estabelecimento: "Pão de Açúcar",
-    tipo: "despesa",
-    categoria: "Alimentação",
-  },
-  {
-    id: 2,
-    quando: new Date("2024-01-14"),
-    valor: 3500.00,
-    detalhes: "Salário mensal",
-    estabelecimento: "Empresa XYZ",
-    tipo: "receita",
-    categoria: "Salário",
-  },
-  {
-    id: 3,
-    quando: new Date("2024-01-13"),
-    valor: -80.00,
-    detalhes: "Abastecimento",
-    estabelecimento: "Posto Shell",
-    tipo: "despesa",
-    categoria: "Transporte",
-  },
-  {
-    id: 4,
-    quando: new Date("2024-01-12"),
-    valor: -45.90,
-    detalhes: "Cinema",
-    estabelecimento: "Cinemark",
-    tipo: "despesa",
-    categoria: "Lazer",
-  },
-  {
-    id: 5,
-    quando: new Date("2024-01-11"),
-    valor: -1200.00,
-    detalhes: "Aluguel",
-    estabelecimento: "Imobiliária ABC",
-    tipo: "despesa",
-    categoria: "Moradia",
-  },
-]
-
 interface TransactionsTableProps {
+  transactions: any[]
   onEdit?: (transaction: any) => void
   onDelete?: (id: number) => void
   onAdd?: () => void
 }
 
 export function TransactionsTable({ 
+  transactions,
   onEdit, 
   onDelete, 
   onAdd 
@@ -98,17 +51,17 @@ export function TransactionsTable({
     return tipo === "receita" ? "default" : "destructive"
   }
 
-  const filteredTransactions = sampleTransactions.filter((transaction) => {
+  const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = 
-      transaction.detalhes.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.estabelecimento.toLowerCase().includes(searchTerm.toLowerCase())
+      (transaction.detalhes || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (transaction.estabelecimento || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = filterType === "all" || transaction.tipo === filterType
     const matchesCategory = filterCategory === "all" || transaction.categoria === filterCategory
     
     return matchesSearch && matchesType && matchesCategory
   })
 
-  const categories = [...new Set(sampleTransactions.map(t => t.categoria))]
+  const categories = [...new Set(transactions.map(t => t.categoria).filter(Boolean))]
 
   return (
     <Card className="card-gradient">
@@ -176,12 +129,12 @@ export function TransactionsTable({
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
-                    {format(transaction.quando, "dd/MM/yyyy", { locale: ptBR })}
+                    {format(new Date(transaction.quando || transaction.created_at), "dd/MM/yyyy", { locale: ptBR })}
                   </TableCell>
-                  <TableCell>{transaction.detalhes}</TableCell>
-                  <TableCell>{transaction.estabelecimento}</TableCell>
+                  <TableCell>{transaction.detalhes || '-'}</TableCell>
+                  <TableCell>{transaction.estabelecimento || '-'}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{transaction.categoria}</Badge>
+                    <Badge variant="outline">{transaction.categoria || 'Sem categoria'}</Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getTypeVariant(transaction.tipo)}>

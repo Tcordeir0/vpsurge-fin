@@ -2,28 +2,54 @@ import { useState } from "react"
 import { OverviewCards } from "@/components/dashboard/overview-cards"
 import { ChartsSection } from "@/components/dashboard/charts-section"
 import { TransactionsTable } from "@/components/dashboard/transactions-table"
+import { TransactionForm } from "@/components/dashboard/transaction-form"
+import { useTransactions } from "@/hooks/use-transactions"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 export default function Dashboard() {
-  // Sample data - replace with real data from Supabase
-  const [totalBalance] = useState(8450.75)
-  const [totalIncome] = useState(12500.00)
-  const [totalExpenses] = useState(-4049.25)
-  const [monthlyChange] = useState(892.50)
+  const { transactions, metrics, addTransaction, updateTransaction, deleteTransaction, user } = useTransactions()
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState(null)
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Acesso Restrito</h1>
+          <p className="text-muted-foreground">Você precisa estar logado para acessar o dashboard financeiro.</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleEditTransaction = (transaction: any) => {
-    toast.info(`Editando transação: ${transaction.detalhes}`)
-    // Implement edit modal logic here
+    setEditingTransaction(transaction)
+    setIsFormOpen(true)
   }
 
   const handleDeleteTransaction = (id: number) => {
-    toast.success(`Transação ${id} removida com sucesso`)
-    // Implement delete logic here
+    deleteTransaction.mutate(id)
   }
 
   const handleAddTransaction = () => {
-    toast.info("Abrindo formulário de nova transação")
-    // Implement add modal logic here
+    setEditingTransaction(null)
+    setIsFormOpen(true)
+  }
+
+  const handleFormSubmit = (data: any) => {
+    if (editingTransaction) {
+      updateTransaction.mutate({ id: editingTransaction.id, ...data })
+    } else {
+      addTransaction.mutate(data)
+    }
+    setIsFormOpen(false)
+    setEditingTransaction(null)
+  }
+
+  const handleFormCancel = () => {
+    setIsFormOpen(false)
+    setEditingTransaction(null)
   }
 
   return (
@@ -41,21 +67,45 @@ export default function Dashboard() {
 
         {/* Overview Cards */}
         <OverviewCards
-          totalBalance={totalBalance}
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          monthlyChange={monthlyChange}
+          totalBalance={metrics.totalBalance}
+          totalIncome={metrics.totalIncome}
+          totalExpenses={metrics.totalExpenses}
+          monthlyChange={metrics.monthlyChange}
         />
 
         {/* Charts Section */}
-        <ChartsSection />
+        <ChartsSection transactions={transactions} />
 
         {/* Transactions Table */}
         <TransactionsTable
+          transactions={transactions}
           onEdit={handleEditTransaction}
           onDelete={handleDeleteTransaction}
           onAdd={handleAddTransaction}
         />
+
+        {/* Transaction Form Dialog */}
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
+              </DialogTitle>
+            </DialogHeader>
+            <TransactionForm
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              initialData={editingTransaction ? {
+                valor: Math.abs(editingTransaction.valor),
+                quando: new Date(editingTransaction.quando || editingTransaction.created_at),
+                detalhes: editingTransaction.detalhes || '',
+                estabelecimento: editingTransaction.estabelecimento || '',
+                tipo: editingTransaction.tipo || 'despesa',
+                categoria: editingTransaction.categoria || '',
+              } : undefined}
+            />
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )

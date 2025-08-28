@@ -14,31 +14,9 @@ import {
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-// Sample data for charts - replace with real data from props
-const lineData = [
-  { month: "Jan", saldo: 4000 },
-  { month: "Fev", saldo: 3000 },
-  { month: "Mar", saldo: 5000 },
-  { month: "Abr", saldo: 4500 },
-  { month: "Mai", saldo: 6000 },
-  { month: "Jun", saldo: 5500 },
-]
-
-const pieData = [
-  { name: "Alimentação", value: 2400, color: "hsl(259, 94%, 51%)" },
-  { name: "Transporte", value: 1398, color: "hsl(142, 76%, 36%)" },
-  { name: "Lazer", value: 800, color: "hsl(32, 95%, 44%)" },
-  { name: "Moradia", value: 3800, color: "hsl(0, 84%, 60%)" },
-  { name: "Outros", value: 1200, color: "hsl(229, 94%, 61%)" },
-]
-
-const barData = [
-  { estabelecimento: "Supermercado", valor: 1200 },
-  { estabelecimento: "Posto", valor: 800 },
-  { estabelecimento: "Restaurante", valor: 600 },
-  { estabelecimento: "Farmácia", valor: 400 },
-  { estabelecimento: "Loja", valor: 300 },
-]
+interface ChartsSectionProps {
+  transactions: any[]
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -59,7 +37,72 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export function ChartsSection() {
+export function ChartsSection({ transactions }: ChartsSectionProps) {
+  // Process transactions for charts
+  const processLineData = () => {
+    const monthlyData: { [key: string]: number } = {}
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.quando || transaction.created_at)
+      const monthKey = months[date.getMonth()]
+      if (!monthlyData[monthKey]) monthlyData[monthKey] = 0
+      monthlyData[monthKey] += transaction.valor || 0
+    })
+    
+    return months.map(month => ({
+      month,
+      saldo: monthlyData[month] || 0
+    })).filter(item => item.saldo !== 0)
+  }
+
+  const processPieData = () => {
+    const categoryData: { [key: string]: number } = {}
+    const colors = [
+      "hsl(259, 94%, 51%)",
+      "hsl(142, 76%, 36%)",
+      "hsl(32, 95%, 44%)",
+      "hsl(0, 84%, 60%)",
+      "hsl(229, 94%, 61%)",
+      "hsl(280, 70%, 50%)",
+      "hsl(60, 90%, 50%)",
+    ]
+    
+    transactions
+      .filter(t => t.tipo === 'despesa' && t.categoria)
+      .forEach(transaction => {
+        const category = transaction.categoria
+        if (!categoryData[category]) categoryData[category] = 0
+        categoryData[category] += Math.abs(transaction.valor || 0)
+      })
+    
+    return Object.entries(categoryData).map(([name, value], index) => ({
+      name,
+      value,
+      color: colors[index % colors.length]
+    }))
+  }
+
+  const processBarData = () => {
+    const establishmentData: { [key: string]: number } = {}
+    
+    transactions
+      .filter(t => t.estabelecimento)
+      .forEach(transaction => {
+        const establishment = transaction.estabelecimento
+        if (!establishmentData[establishment]) establishmentData[establishment] = 0
+        establishmentData[establishment] += Math.abs(transaction.valor || 0)
+      })
+    
+    return Object.entries(establishmentData)
+      .map(([estabelecimento, valor]) => ({ estabelecimento, valor }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 5)
+  }
+
+  const lineData = processLineData()
+  const pieData = processPieData()
+  const barData = processBarData()
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {/* Balance Evolution Chart */}

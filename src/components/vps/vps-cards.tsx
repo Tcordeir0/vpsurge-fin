@@ -4,53 +4,16 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-// Sample VPS data
-const vpsData = [
-  {
-    id: 1,
-    name: "VPS Principal",
-    status: "online",
-    ip: "192.168.1.10",
-    location: "Goiânia, Brasil",
-    cpuUsage: 45,
-    ramUsage: 67,
-    diskUsage: 32,
-    expiryDate: "2024-12-15",
-    plan: "Premium",
-  },
-  {
-    id: 2,
-    name: "Servidor de Testes",
-    status: "online",
-    ip: "192.168.1.11",
-    location: "São Paulo, Brasil",
-    cpuUsage: 23,
-    ramUsage: 41,
-    diskUsage: 78,
-    expiryDate: "2024-11-30",
-    plan: "Basic",
-  },
-  {
-    id: 3,
-    name: "VPS Backup",
-    status: "offline",
-    ip: "192.168.1.12",
-    location: "Rio de Janeiro, Brasil",
-    cpuUsage: 0,
-    ramUsage: 0,
-    diskUsage: 15,
-    expiryDate: "2024-10-20",
-    plan: "Standard",
-  },
-]
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 interface VPSCardsProps {
-  onRestart?: (vpsId: number) => void
-  onStop?: (vpsId: number) => void
+  statuses: any[]
+  onRestart?: (vpsId: string) => void
+  onStop?: (vpsId: string) => void
 }
 
-export function VPSCards({ onRestart, onStop }: VPSCardsProps) {
+export function VPSCards({ statuses, onRestart, onStop }: VPSCardsProps) {
   const getStatusColor = (status: string) => {
     return status === "online" ? "default" : "destructive"
   }
@@ -62,12 +25,20 @@ export function VPSCards({ onRestart, onStop }: VPSCardsProps) {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR")
+    return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR })
+  }
+
+  if (!statuses || statuses.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Nenhuma VPS configurada. Configure uma nova VPS para começar.</p>
+      </div>
+    )
   }
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {vpsData.map((vps, index) => (
+      {statuses.map((vps, index) => (
         <Card 
           key={vps.id} 
           className={cn(
@@ -91,13 +62,13 @@ export function VPSCards({ onRestart, onStop }: VPSCardsProps) {
                   "mr-2 h-2 w-2 rounded-full",
                   vps.status === "online" ? "bg-success animate-pulse" : "bg-destructive"
                 )} />
-                {vps.status === "online" ? "Online" : "Offline"}
+                {vps.status === "online" ? "Online" : vps.status === "offline" ? "Offline" : "Desconhecido"}
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Activity className="h-4 w-4" />
-                {vps.ip}
+                {vps.host}
               </div>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
@@ -164,15 +135,17 @@ export function VPSCards({ onRestart, onStop }: VPSCardsProps) {
             {/* Additional Info */}
             <div className="space-y-2 border-t pt-3">
               <div className="flex items-center justify-between text-sm">
-                <span>Plano:</span>
-                <Badge variant="outline">{vps.plan}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   Expira em:
                 </span>
-                <span className="font-medium">{formatDate(vps.expiryDate)}</span>
+                <span className="font-medium">{formatDate(vps.expirationDate)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span>Última verificação:</span>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(vps.lastChecked), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                </span>
               </div>
             </div>
 
