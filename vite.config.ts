@@ -4,6 +4,10 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // SEÇÃO ADICIONADA PARA PERMITIR O ACESSO
+  preview: {
+    allowedHosts: ['painel-painel.jgbsku.easypanel.host'],
+  },
   plugins: [react()],
   resolve: {
     alias: {
