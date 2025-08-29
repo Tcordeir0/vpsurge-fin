@@ -22,20 +22,20 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { useTransactions } from "@/hooks/use-transactions"
 
 interface TransactionsTableProps {
-  transactions: any[]
   onEdit?: (transaction: any) => void
   onDelete?: (id: number) => void
   onAdd?: () => void
 }
 
 export function TransactionsTable({ 
-  transactions,
   onEdit, 
   onDelete, 
   onAdd 
 }: TransactionsTableProps) {
+  const { transactions, loading } = useTransactions()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterCategory, setFilterCategory] = useState("all")
@@ -177,7 +177,11 @@ export function TransactionsTable({
           </Table>
         </div>
         
-        {filteredTransactions.length === 0 && (
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-muted-foreground">Carregando transações...</p>
+          </div>
+        ) : filteredTransactions.length === 0 && (
           <div className="flex items-center justify-center py-8">
             <p className="text-muted-foreground">Nenhuma transação encontrada.</p>
           </div>
