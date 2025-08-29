@@ -4,10 +4,6 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  server: {
-    port: 8080
-  },
-  // SEÇÃO ADICIONADA PARA PERMITIR O ACESSO
   preview: {
     allowedHosts: ['painel-painel.jgbsku.easypanel.host'],
   },
@@ -15,13 +11,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // ADIÇÃO PARA CORRIGIR O ERRO DO 'react-is' NO NAVEGADOR
+      'react-is': path.resolve(__dirname, 'node_modules/react-is'),
     },
   },
-  build: {
-    rollupOptions: {
-      external: [
-        'react-is',
-      ],
-    },
-  },
+  // A SEÇÃO 'build' FOI REMOVIDA, POIS O 'alias' ACIMA É A SOLUÇÃO CORRETA
 });
