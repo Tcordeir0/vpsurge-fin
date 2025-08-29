@@ -19,4 +19,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // ADICIONE ESTA SEÇÃO PARA CORRIGIR O BUILD
+  build: {
+    rollupOptions: {
+      external: [
+        'react-is',
+      ],
+    },
+  },
 }));
