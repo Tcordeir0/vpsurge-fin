@@ -1,9 +1,10 @@
 import { useState } from "react"
-import { Link, useLocation } from "react-router-dom"
-import { Home, Server, Menu, X, Wallet, BarChart3 } from "lucide-react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Home, Server, Menu, X, Wallet, BarChart3, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
@@ -13,6 +14,13 @@ const navigation = [
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated")
+    toast.success("Logout realizado com sucesso!")
+    navigate("/login")
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -58,6 +66,14 @@ export function Navigation() {
         {/* Right side actions */}
         <div className="flex items-center gap-4">
           <ThemeToggle />
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleLogout}
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
           
           {/* Mobile menu button */}
           <div className="md:hidden">

@@ -5,8 +5,10 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Navigation } from "@/components/layout/navigation";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import VPS from "./pages/VPS";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,11 +21,21 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <div className="min-h-screen bg-background text-foreground">
-            <Navigation />
             <Routes>
+              <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vps" element={<VPS />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Navigation />
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/vps" element={
+                <ProtectedRoute>
+                  <Navigation />
+                  <VPS />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

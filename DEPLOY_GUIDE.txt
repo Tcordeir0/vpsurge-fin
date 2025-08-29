@@ -1,0 +1,415 @@
+# GUIA DE DEPLOY - DASHBOARD FINANCEIRO
+# Como rodar em VPS e EasyPanel
+
+## PREPARAÇÃO DA VPS
+
+### 1. Configuração Inicial da VPS
+```bash
+# Conectar via SSH
+ssh root@SEU_IP_VPS
+
+# Atualizar sistema
+apt update && apt upgrade -y
+
+# Instalar dependências essenciais
+apt install -y curl wget git unzip nginx certbot python3-certbot-nginx
+
+# Instalar Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+# Instalar Docker Compose
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
+# Verificar instalações
+docker --version
+docker-compose --version
+```
+
+### 2. Configurar Firewall
+```bash
+# Configurar UFW
+ufw enable
+ufw allow ssh
+ufw allow 80
+ufw allow 443
+ufw allow 3000
+ufw status
+```
+
+## MÉTODO 1: DEPLOY MANUAL NA VPS
+
+### 1. Clonar o Projeto
+```bash
+# Criar diretório do projeto
+mkdir -p /var/www/dashboard-financeiro
+cd /var/www/dashboard-financeiro
+
+# Se usando Git (recomendado)
+git clone SEU_REPOSITORIO_GIT .
+
+# OU fazer upload manual dos arquivos via SCP:
+# scp -r ./projeto-local/* root@SEU_IP:/var/www/dashboard-financeiro/
+```
+
+### 2. Instalar Node.js e NPM
+```bash
+# Instalar Node.js 18+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+apt-get install -y nodejs
+
+# Verificar versões
+node --version
+npm --version
+```
+
+### 3. Configurar o Projeto
+```bash
+cd /var/www/dashboard-financeiro
+
+# Instalar dependências
+npm install
+
+# Configurar variáveis de ambiente (se necessário)
+cp .env.example .env
+nano .env
+
+# Build do projeto
+npm run build
+
+# Instalar PM2 para gerenciar processos
+npm install -g pm2
+
+# Criar arquivo de configuração do PM2
+nano ecosystem.config.js
+```
+
+### 4. Arquivo ecosystem.config.js
+```javascript
+module.exports = {
+  apps: [
+    {
+      name: 'dashboard-financeiro',
+      script: 'npm',
+      args: 'run preview',
+      cwd: '/var/www/dashboard-financeiro',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000
+      }
+    }
+  ]
+};
+```
+
+### 5. Iniciar Aplicação
+```bash
+# Iniciar com PM2
+pm2 start ecosystem.config.js
+
+# Salvar configuração PM2
+pm2 save
+pm2 startup
+
+# Verificar status
+pm2 status
+pm2 logs dashboard-financeiro
+```
+
+### 6. Configurar Nginx
+```bash
+# Criar configuração do site
+nano /etc/nginx/sites-available/dashboard-financeiro
+```
+
+```nginx
+server {
+    listen 80;
+    server_name SEU_DOMINIO.com www.SEU_DOMINIO.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+```bash
+# Ativar site
+ln -s /etc/nginx/sites-available/dashboard-financeiro /etc/nginx/sites-enabled/
+
+# Testar configuração
+nginx -t
+
+# Reiniciar Nginx
+systemctl restart nginx
+systemctl enable nginx
+```
+
+### 7. Configurar SSL (HTTPS)
+```bash
+# Obter certificado SSL gratuito
+certbot --nginx -d SEU_DOMINIO.com -d www.SEU_DOMINIO.com
+
+# Configurar renovação automática
+crontab -e
+# Adicionar linha:
+# 0 12 * * * /usr/bin/certbot renew --quiet
+```
+
+## MÉTODO 2: DEPLOY COM EASYPANEL
+
+### 1. Preparar VPS para EasyPanel
+```bash
+# Conectar à VPS
+ssh root@SEU_IP_VPS
+
+# Instalar Docker (se não instalado)
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+# Verificar Docker
+docker --version
+```
+
+### 2. Instalar EasyPanel
+```bash
+# Baixar e instalar EasyPanel
+curl -sSL https://get.easypanel.io | sh
+
+# O instalador irá:
+# - Instalar EasyPanel
+# - Configurar Docker
+# - Iniciar os serviços
+# - Mostrar a URL de acesso (geralmente http://SEU_IP:3000)
+```
+
+### 3. Configurar EasyPanel
+1. Acesse http://SEU_IP:3000
+2. Crie sua conta de administrador
+3. Configure seu domínio (se tiver)
+
+### 4. Deploy da Aplicação no EasyPanel
+
+#### Opção A: Deploy via Git
+1. No painel EasyPanel, clique em "Create Project"
+2. Escolha "Git Repository"
+3. Configure:
+   - **Repository URL**: URL do seu repositório Git
+   - **Branch**: main (ou master)
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm run preview`
+   - **Port**: 4173
+   - **Environment Variables**: Adicione se necessário
+
+#### Opção B: Deploy via Docker
+1. Criar Dockerfile na raiz do projeto:
+
+```dockerfile
+# Dockerfile
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine AS runtime
+
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+RUN npm ci --only=production
+RUN npm install -g serve
+
+EXPOSE 3000
+
+CMD ["serve", "-s", "dist", "-l", "3000"]
+```
+
+2. No EasyPanel:
+   - Clique em "Create Project"
+   - Escolha "Docker"
+   - Configure:
+     - **Source**: Git Repository
+     - **Repository**: URL do repositório
+     - **Dockerfile**: Dockerfile (raiz)
+     - **Port**: 3000
+
+### 5. Configurar Domínio no EasyPanel
+1. No projeto criado, vá em "Domains"
+2. Clique em "Add Domain"
+3. Digite seu domínio
+4. EasyPanel automaticamente configurará SSL
+
+## CONFIGURAÇÃO DO SUPABASE
+
+### 1. Configurar URLs no Supabase
+No painel do Supabase (https://supabase.com/dashboard):
+
+1. Vá em Authentication > URL Configuration
+2. Configure:
+   - **Site URL**: https://SEU_DOMINIO.com
+   - **Redirect URLs**: 
+     - https://SEU_DOMINIO.com
+     - https://SEU_DOMINIO.com/login
+     - https://SEU_DOMINIO.com/dashboard
+
+### 2. Configurar CORS (se necessário)
+Se tiver problemas de CORS, adicione seu domínio nas configurações de CORS do Supabase.
+
+## COMANDOS ÚTEIS DE MANUTENÇÃO
+
+### Verificar Status
+```bash
+# Status da aplicação
+pm2 status
+pm2 logs dashboard-financeiro
+
+# Status do Nginx
+systemctl status nginx
+
+# Status do Docker (se usando EasyPanel)
+docker ps
+```
+
+### Atualizar Aplicação
+```bash
+cd /var/www/dashboard-financeiro
+
+# Parar aplicação
+pm2 stop dashboard-financeiro
+
+# Atualizar código
+git pull origin main
+
+# Reinstalar dependências (se necessário)
+npm install
+
+# Fazer novo build
+npm run build
+
+# Reiniciar aplicação
+pm2 start dashboard-financeiro
+```
+
+### Backup
+```bash
+# Backup do projeto
+tar -czf backup-dashboard-$(date +%Y%m%d).tar.gz /var/www/dashboard-financeiro
+
+# Backup do banco Supabase
+# Use o painel do Supabase para fazer backup automático
+```
+
+## SOLUÇÃO DE PROBLEMAS
+
+### Aplicação não carrega
+```bash
+# Verificar logs
+pm2 logs dashboard-financeiro
+
+# Verificar se porta está em uso
+netstat -tlnp | grep :3000
+
+# Reiniciar serviços
+pm2 restart dashboard-financeiro
+systemctl restart nginx
+```
+
+### Problemas de SSL
+```bash
+# Renovar certificado
+certbot renew
+
+# Verificar configuração SSL
+certbot certificates
+```
+
+### Performance
+```bash
+# Monitorar recursos
+htop
+pm2 monit
+
+# Verificar logs de acesso
+tail -f /var/log/nginx/access.log
+```
+
+## CUSTOS APROXIMADOS
+
+### VPS Básica (Recomendada)
+- **CPU**: 1-2 cores
+- **RAM**: 2-4GB
+- **Storage**: 20-40GB SSD
+- **Bandwidth**: 1-2TB
+- **Custo**: $5-15/mês
+
+### Provedores Recomendados
+- DigitalOcean (Ocean)
+- Vultr
+- Linode
+- AWS Lightsail
+- Google Cloud (f1-micro para teste)
+
+## SEGURANÇA
+
+### Configurações Básicas
+```bash
+# Alterar porta SSH
+nano /etc/ssh/sshd_config
+# Port 2222
+
+# Desabilitar login root
+# PermitRootLogin no
+
+# Reiniciar SSH
+systemctl restart sshd
+
+# Configurar fail2ban
+apt install fail2ban
+systemctl enable fail2ban
+```
+
+### Monitoramento
+```bash
+# Instalar monitoramento básico
+apt install htop iotop nethogs
+
+# Configurar alertas de espaço em disco
+crontab -e
+# 0 */6 * * * df -h | mail -s "Disk Usage" seu@email.com
+```
+
+---
+
+## RESUMO DOS PASSOS
+
+1. **Preparar VPS**: Instalar Docker, Node.js, Nginx
+2. **Escolher método**: Manual ou EasyPanel
+3. **Deploy**: Subir código e configurar
+4. **Configurar domínio**: DNS e SSL
+5. **Configurar Supabase**: URLs e CORS
+6. **Testar**: Verificar funcionalidade
+7. **Monitorar**: Logs e performance
+
+**IMPORTANTE**: 
+- Sempre fazer backup antes de mudanças
+- Testar em ambiente de desenvolvimento primeiro
+- Monitorar logs após deploy
+- Configurar SSL obrigatoriamente para produção
