@@ -158,6 +158,30 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios_autorizados: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          nome?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string | null
+        }
+        Relationships: []
+      }
       workflow_state: {
         Row: {
           data: Json | null

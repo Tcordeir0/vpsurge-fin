@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { supabase } from "@/integrations/supabase/client"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
@@ -16,10 +17,14 @@ export function Navigation() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated")
-    toast.success("Logout realizado com sucesso!")
-    navigate("/login")
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      toast.error("Erro ao fazer logout!")
+    } else {
+      toast.success("Logout realizado com sucesso!")
+      navigate("/login")
+    }
   }
 
   return (

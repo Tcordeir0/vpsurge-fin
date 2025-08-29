@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import VPS from "./pages/VPS";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <div className="min-h-screen bg-background text-foreground">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>

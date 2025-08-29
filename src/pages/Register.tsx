@@ -5,20 +5,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Lock, User } from "lucide-react";
+import { Lock, User, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const Login = () => {
+const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      // Verificar se as senhas coincidem
+      if (password !== confirmPassword) {
+        toast.error("As senhas não coincidem!");
+        setIsLoading(false);
+        return;
+      }
+
       // Verificar se o email está na lista de usuários autorizados
       const { data: autorizado } = await supabase
         .from('usuarios_autorizados')
@@ -28,29 +36,32 @@ const Login = () => {
         .single();
 
       if (!autorizado) {
-        toast.error("Email não autorizado!");
+        toast.error("Email não autorizado para cadastro!");
         setIsLoading(false);
         return;
       }
 
-      // Tentar fazer login com Supabase Auth
-      const { error } = await supabase.auth.signInWithPassword({
+      // Registrar usuário no Supabase Auth
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`
+        }
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast.error("Email ou senha incorretos!");
+        if (error.message.includes('User already registered')) {
+          toast.error("Usuário já cadastrado! Faça login.");
         } else {
-          toast.error("Erro ao fazer login: " + error.message);
+          toast.error("Erro ao cadastrar: " + error.message);
         }
       } else {
-        toast.success("Login realizado com sucesso!");
-        navigate("/dashboard");
+        toast.success("Cadastro realizado! Verifique seu email para confirmar a conta.");
+        navigate("/login");
       }
     } catch (error) {
-      toast.error("Erro inesperado ao fazer login!");
+      toast.error("Erro inesperado ao cadastrar!");
     }
     
     setIsLoading(false);
@@ -62,16 +73,16 @@ const Login = () => {
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="rounded-full bg-primary/10 p-3">
-              <Lock className="h-6 w-6 text-primary" />
+              <UserPlus className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Dashboard Financeiro</CardTitle>
+          <CardTitle className="text-2xl text-center">Cadastro</CardTitle>
           <CardDescription className="text-center">
-            Faça login para acessar o sistema
+            Crie sua conta para acessar o sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -102,20 +113,35 @@ const Login = () => {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
             <Button 
               type="submit" 
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? "Cadastrando..." : "Cadastrar"}
             </Button>
             <div className="text-center">
               <Button 
                 variant="link" 
-                onClick={() => navigate("/register")}
+                onClick={() => navigate("/login")}
                 className="text-sm"
               >
-                Não tem uma conta? Cadastre-se
+                Já tem uma conta? Faça login
               </Button>
             </div>
           </form>
@@ -125,4 +151,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
