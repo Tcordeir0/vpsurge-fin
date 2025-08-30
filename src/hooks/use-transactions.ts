@@ -54,6 +54,32 @@ export function useTransactions() {
     enabled: !!user?.id,
   })
 
+  // Real-time subscription for transactions
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel('transactions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transacoes',
+          filter: `user=eq.${user.id}`
+        },
+        () => {
+          // Invalidate and refetch when any change occurs
+          queryClient.invalidateQueries({ queryKey: ['transactions', user.id] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, queryClient])
+
   const addTransaction = useMutation({
     mutationFn: async (transaction: Omit<Transaction, 'id' | 'created_at' | 'user'>) => {
       if (!user?.id) throw new Error('User not authenticated')
@@ -145,6 +171,7 @@ export function useTransactions() {
 
   return {
     transactions,
+    loading: isLoading, // For backward compatibility
     isLoading,
     error,
     user,

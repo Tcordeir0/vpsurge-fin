@@ -25,17 +25,20 @@ import { cn } from "@/lib/utils"
 import { useTransactions } from "@/hooks/use-transactions"
 
 interface TransactionsTableProps {
+  transactions?: any[]
   onEdit?: (transaction: any) => void
   onDelete?: (id: number) => void
   onAdd?: () => void
 }
 
 export function TransactionsTable({ 
+  transactions: propTransactions,
   onEdit, 
   onDelete, 
   onAdd 
 }: TransactionsTableProps) {
-  const { transactions, loading } = useTransactions()
+  const { transactions: hookTransactions, loading } = useTransactions()
+  const transactions = propTransactions || hookTransactions
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterCategory, setFilterCategory] = useState("all")
