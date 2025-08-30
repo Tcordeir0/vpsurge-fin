@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      analises_codigo: {
+        Row: {
+          analise_resultado: string | null
+          codigo_corrigido: string | null
+          codigo_original: string
+          created_at: string
+          id: string
+          linguagem_detectada: string | null
+        }
+        Insert: {
+          analise_resultado?: string | null
+          codigo_corrigido?: string | null
+          codigo_original: string
+          created_at?: string
+          id?: string
+          linguagem_detectada?: string | null
+        }
+        Update: {
+          analise_resultado?: string | null
+          codigo_corrigido?: string | null
+          codigo_original?: string
+          created_at?: string
+          id?: string
+          linguagem_detectada?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           content: string | null
@@ -32,6 +59,36 @@ export type Database = {
           embedding?: string | null
           id?: number
           metadata?: Json | null
+        }
+        Relationships: []
+      }
+      historico_conversas: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem_usuario: string
+          metadata: Json | null
+          nome_grupo: string | null
+          nome_usuario: string | null
+          resposta_ia: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem_usuario: string
+          metadata?: Json | null
+          nome_grupo?: string | null
+          nome_usuario?: string | null
+          resposta_ia?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem_usuario?: string
+          metadata?: Json | null
+          nome_grupo?: string | null
+          nome_usuario?: string | null
+          resposta_ia?: string | null
         }
         Relationships: []
       }
@@ -55,19 +112,16 @@ export type Database = {
       }
       memorias_ia: {
         Row: {
-          conteudo: string | null
-          embedding: string | null
           id: number
+          menssage: string | null
         }
         Insert: {
-          conteudo?: string | null
-          embedding?: string | null
           id?: number
+          menssage?: string | null
         }
         Update: {
-          conteudo?: string | null
-          embedding?: string | null
           id?: number
+          menssage?: string | null
         }
         Relationships: []
       }
@@ -86,6 +140,57 @@ export type Database = {
           id?: number
           message?: Json
           session_id?: string
+        }
+        Relationships: []
+      }
+      pesquisas_mapa: {
+        Row: {
+          contato_email: string | null
+          contato_telefone: string | null
+          created_at: string
+          detalhes: string | null
+          id: string
+          latitude: number | null
+          link_anuncio: string | null
+          localizacao_texto: string | null
+          longitude: number | null
+          moeda: string | null
+          nome_local: string
+          query_original: string
+          tipo_item: string | null
+          valor: number | null
+        }
+        Insert: {
+          contato_email?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          detalhes?: string | null
+          id?: string
+          latitude?: number | null
+          link_anuncio?: string | null
+          localizacao_texto?: string | null
+          longitude?: number | null
+          moeda?: string | null
+          nome_local: string
+          query_original: string
+          tipo_item?: string | null
+          valor?: number | null
+        }
+        Update: {
+          contato_email?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          detalhes?: string | null
+          id?: string
+          latitude?: number | null
+          link_anuncio?: string | null
+          localizacao_texto?: string | null
+          longitude?: number | null
+          moeda?: string | null
+          nome_local?: string
+          query_original?: string
+          tipo_item?: string | null
+          valor?: number | null
         }
         Relationships: []
       }
@@ -122,6 +227,39 @@ export type Database = {
         }
         Relationships: []
       }
+      recursos_video: {
+        Row: {
+          canal_ou_criador: string | null
+          created_at: string
+          descricao_curta: string | null
+          id: string
+          plataforma: Database["public"]["Enums"]["plataforma_video"]
+          query_original: string
+          titulo_video: string
+          url_video: string
+        }
+        Insert: {
+          canal_ou_criador?: string | null
+          created_at?: string
+          descricao_curta?: string | null
+          id?: string
+          plataforma: Database["public"]["Enums"]["plataforma_video"]
+          query_original: string
+          titulo_video: string
+          url_video: string
+        }
+        Update: {
+          canal_ou_criador?: string | null
+          created_at?: string
+          descricao_curta?: string | null
+          id?: string
+          plataforma?: Database["public"]["Enums"]["plataforma_video"]
+          query_original?: string
+          titulo_video?: string
+          url_video?: string
+        }
+        Relationships: []
+      }
       transacoes: {
         Row: {
           categoria: string | null
@@ -139,7 +277,7 @@ export type Database = {
           created_at?: string
           detalhes?: string | null
           estabelecimento?: string | null
-          id?: never
+          id?: number
           quando?: string | null
           tipo?: string | null
           user?: string | null
@@ -150,7 +288,7 @@ export type Database = {
           created_at?: string
           detalhes?: string | null
           estabelecimento?: string | null
-          id?: never
+          id?: number
           quando?: string | null
           tipo?: string | null
           user?: string | null
@@ -197,6 +335,33 @@ export type Database = {
           data?: Json | null
           key?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workflows_n8n: {
+        Row: {
+          created_at: string
+          descricao_pedido: string
+          guia_passos: string | null
+          id: string
+          nome_workflow: string
+          workflow_json: Json | null
+        }
+        Insert: {
+          created_at?: string
+          descricao_pedido: string
+          guia_passos?: string | null
+          id?: string
+          nome_workflow: string
+          workflow_json?: Json | null
+        }
+        Update: {
+          created_at?: string
+          descricao_pedido?: string
+          guia_passos?: string | null
+          id?: string
+          nome_workflow?: string
+          workflow_json?: Json | null
         }
         Relationships: []
       }
@@ -320,7 +485,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      plataforma_video: "youtube" | "tiktok"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -447,6 +612,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plataforma_video: ["youtube", "tiktok"],
+    },
   },
 } as const
